@@ -2,11 +2,17 @@ const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
+const clients = new Map();
+
 wss.on('connection', function connection(ws, req) {
   const ip = req.connection.remoteAddress;
-  console.log(`${ip} connected at ${req.url}`);
+  const channel = (req.url || '').replace(/^\/+/, '');
+  const channelClients = clients.get(channel) || new Set();
+  channelClients.add(ws);
+  clients.set(channel, channelClients);
+  console.log(`${ip} connected at ${channel}`);
   ws.on('message', function incoming(data) {
-    wss.clients.forEach(function each(client) {
+    channelClients.forEach(function each(client) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(data);
       }
@@ -14,5 +20,6 @@ wss.on('connection', function connection(ws, req) {
   });
   ws.on('close', function onClose() {
     console.log(`${ip} disconnected`);
-  })
+    channelClients.delete(ws);
+  });
 });
