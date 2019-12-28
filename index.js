@@ -13,7 +13,7 @@ wss.on('connection', function connection(ws, req) {
   console.log(`${ip} connected at ${channel}`);
   ws.on('message', function incoming(data) {
     channelClients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
         client.send(data);
       }
     });
